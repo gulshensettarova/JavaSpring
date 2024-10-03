@@ -153,7 +153,136 @@ Question -5. Pessimistic vs Optimistic locking
 
 
 
-Question -6. @Inheritance
+Question -6. @Inheritance annotasiyası:
+             Hibernate-də obyektlər arası əlaqəni qurur və bu obyektlərin verilənlər bazasında necə saxlanacağını təyin edir.
+             Inheritance əlaqələri bir neçə strategiya ilə qurula bilər:
+             a) SINGLE_TABLE
+             b) JOINED
+             c) TABLE_PER_CLASS
+
+             -- SINGLE_TABLE : bütün əlaqəli siniflər üçün 1 cədvəl yaradılır, bütün field-lər bir cədvəldə saxlanılır.
+                               Fərqli sinif field-lərini bir-birindən ayırmaq üçün discriminator column istifadə olunur:
+
+                               @Entity
+                               @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+                               @DiscriminatorColumn(name = "vehicle_type", discriminatorType = DiscriminatorType.STRING)
+                               public class Vehicle {
+                                   @Id
+                                   private Long id;
+                                   private String model;
+                               }
+
+                               @Entity
+                               @DiscriminatorValue("Car")
+                               public class Car extends Vehicle {
+                                   private int numberOfDoors;
+                               }
+
+                               @Entity
+                               @DiscriminatorValue("Bike")
+                               public class Bike extends Vehicle {
+                                   private boolean hasPedals;
+                               }
+
+                             SQL-də qarşılığı:
+
+                             CREATE TABLE Vehicle (
+                                 id BIGINT NOT NULL,
+                                 model VARCHAR,
+                                 numberOfDoors INTEGER,
+                                 hasPedals BOOLEAN,
+                                 vehicle_type VARCHAR(255),
+                                 PRIMARY KEY (id)
+                             );
+
+             -- JOINED : Super class bir cədvəldə, subclass-lar isə hər biri ayrı cədvəldə saxlanılır.
+                         Bu cədvəllərin birləşdirilməsində join operatoru istifadə olunur deyə adı da ordan gəlir:
+
+                         CREATE TABLE Vehicle (
+                             id BIGINT NOT NULL,
+                             model VARCHAR,
+                             PRIMARY KEY (id)
+                         );
+
+                         CREATE TABLE Car (
+                             id BIGINT NOT NULL,
+                             numberOfDoors INTEGER,
+                             PRIMARY KEY (id),
+                             FOREIGN KEY (id) REFERENCES Vehicle (id)
+                         );
+
+                        SQL qarşılığı :
+
+                         CREATE TABLE Bike (
+                             id BIGINT NOT NULL,
+                             hasPedals BOOLEAN,
+                             PRIMARY KEY (id),
+                             FOREIGN KEY (id) REFERENCES Vehicle (id)
+                         );
+
+             -- TABLE_PER_CLASS : Bu strategiyada hər subclass (alt sinif) öz məlumatlarını saxlayan ayrıca cədvəl yaradır.
+                                  Hər bir subclass cədvəlində superclass-a aid olan sahələr təkrarlanır.
+                                  Bank sistemini nəzərdən keçirək, burada Account adlı bir superclass
+                                  (əsas sinif) var və onun iki subclass-ı (alt sinifi) SavingsAccount və CheckingAccount var.
+
+                                  @Entity
+                                  @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+                                  public abstract class Account {
+                                      @Id
+                                      @GeneratedValue(strategy = GenerationType.AUTO)
+                                      private Long id;
+                                      private String accountHolder;
+                                      private double balance;
+
+                                      // Getters and setters
+                                  }
+
+                                  @Entity
+                                    public class SavingsAccount extends Account {
+                                        private double interestRate;
+
+                                        // Getters and setters
+                                    }
+                                  @Entity
+                                  public class CheckingAccount extends Account {
+                                      private double overdraftLimit;
+
+                                      // Getters and setters
+                                  }
+
+                                  SQL qarşılığı :
+
+                                  CREATE TABLE Account (
+                                      id BIGINT NOT NULL,
+                                      accountHolder VARCHAR,
+                                      balance DOUBLE,
+                                      PRIMARY KEY (id)
+                                  );
+                                  CREATE TABLE SavingsAccount (
+                                      id BIGINT NOT NULL,
+                                      accountHolder VARCHAR,
+                                      balance DOUBLE,
+                                      interestRate DOUBLE,
+                                      PRIMARY KEY (id)
+                                  );
+                                  CREATE TABLE CheckingAccount (
+                                      id BIGINT NOT NULL,
+                                      accountHolder VARCHAR,
+                                      balance DOUBLE,
+                                      overdraftLimit DOUBLE,
+                                      PRIMARY KEY (id)
+                                  );
+
+
+
+
+
+
+
+
+
+
+
 
 Question -7. @Primary annotasiyası:
            @Autowired ilə avtomatik daxil etmə (autowiring) zamanı Spring-in hansı bean-i seçəcəyini müəyyən edir.

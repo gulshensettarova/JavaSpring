@@ -1,0 +1,114 @@
+Question -1 : Try-with-resource bloku nə üçün istifadə olunur?
+   Custom class-ı nə zaman bu blokda istifadə edə bilərik?
+
+   Bu blok açılan resursun avtomatik bağlanmasını təmin edir.
+   Adətən file və db-ilə istifadə olunur.
+
+   try (ResursClass myResurs = new ResursClass()) {
+       // ResursClass obyektindən istifadə edilir
+   } catch (Exception e) {
+       e.printStackTrace();
+   }
+
+   Burada myResurs resursu istifadə olunacaq və try-catch bloku sonlandıqda avtomatik bağlanacaq.
+
+   Custom class-ın bu kod blokunda istifadə oluna bilməsi üçün o AutoCloseable interface-dən implement olmalıdır.
+   Ümumiyyətlə bu kod blokunda ancaq AutoCloseable interface-dən implement edən resurslar istifadə oluna bilər.
+   Bu interface-in daxilində olan close() metodu açılan resursun avtomatik bağlanmasını təmin edir.
+
+Question -2: N+1 problemi nə zaman yaranır və həlli necədir?
+
+      N+1 problemi Hibernate və digər ORM-lərdə yaranan performans problemidir.
+      SQL-də bir-birilə əlaqəli olan (One-to-Many və ya Many-to-One) cədvəllərdə
+      əsas obyektə sorğu verən zaman əlaqəli obyekt üçün də artıq sorğuların göndərilməsi zamanı yaranan problemdir.
+      Məsələn: Employee və Profession cədvəllərimiz var (Many-to-One). Bilirik ki, 1 işçinin 1 ixtisası ola bilər,
+      1 ixtisasa sahib isə çoxlu sayda işçi ola bilər. Biz Profession obyektinə sorğu göndərsiyimiz halda belə bir senari baş verir:
+         1) Select * from Profession
+            Bu zaman fərz edəkki cədvəldə 5 sətir məlumat var. İlk sətir məlumatı əldə etdikdən sonra (fərz edək ki, bu profesiion-un Id=1 dir)
+            Hibernate arxa planda bu cədvəlin əlaqəli olduğu Employee cədvəlinə də sorğu göndərir. Əgər professionId=1 olan 3 işçi varsa, bu zaman:
+
+            Select * from Employee where professionId=1
+            Select * from Employee where professionId=1
+            Select * from Employee where professionId=1
+
+            Arxa planda bu sorğu 3 dəfə gedir yuxarda qeyd olunduğu üçün.
+            Deməli N sayda employee -ilə əlaqəli olan 1 profession üçün sorğu N+1 sayda gedəcək (N dəfə employee üçün 1 dəfə profession üçün)
+
+            İkinci sətirdəki profession-u götürdükdə (fərz edək ki, bu profesiion-un Id=2 dir) eyni senari təkrarlanacaq.Yəni:
+            Əgər professionId=1 olan 2 işçi varsa, bu zaman:
+
+             Select * from Employee where professionId=2
+             Select * from Employee where professionId=2
+
+             Gördüyümüz kimi biz profession cədvəlinə sorğu göndərdiyimiz halda bu arxa planda əlaqəli obyektlə bağlı artıq sorğular generasiya olunur
+             və bu da böyük db-lərlə işləyən zaman ciddi performans itgisinə səbəb olur.
+
+             N+1 probleminin həlli üçün:
+             1) Native query yazib join sorğusundan istifadə edə bilərik
+             2) Fetch join istifadə edə bilərik
+             3) EntityGraph istifadə edə bilərik.
+
+Question -3:  Fetch join nədir?
+      Əlaqəli entity ilə əsas entity-nin tək sorğuda gətirilməsini təmin edərək N+1 problemini həll edir.
+      Department entity-i:
+      @Entity
+      public class Department {
+          @Id
+          @GeneratedValue(strategy = GenerationType.IDENTITY)
+          private Long id;
+
+          private String name;
+
+          @OneToMany(mappedBy = "department")
+          private List<Employee> employees;
+      }
+
+      Employee entity-i :
+      @Entity
+      public class Employee {
+          @Id
+          @GeneratedValue(strategy = GenerationType.IDENTITY)
+          private Long id;
+
+          private String name;
+
+          @ManyToOne
+          @JoinColumn(name = "department_id")
+          private Department department;
+      }
+
+       fetch join sorğusu :
+       String jpql = "SELECT d FROM Department d JOIN FETCH d.employees";
+       List<Department> departments = entityManager.createQuery(jpql, Department.class).getResultList();
+
+       Qeyd : Native query-mi daha optimaldır yoxsa fetch join-mi?
+              Native query yazaraq biz sorğumuzu daha optimal hala gətirə bilərik ama ORM üstünlüklərindən istifadə edə bilməyəcəyik (cache-ləmə, lazy loading və s.).
+              Eyni zamanda gələcəkdə DB-in daşınması kimi bir problem olduqda bu sorğular yeni dilə uyğun olaraq dəyişdirilməli ola bilər.
+
+Question -4. EntityGraph nədir?
+       Hibernate-də entity-lər arası əlaqələr lazy və ya eager olaraq təyin edilə bilər:
+
+       a)Lazy loading: Əlaqəli entity-lər yalnız onlara ehtiyac olduğu zaman (ilk dəfə müraciət edildikdə) yüklənir.
+       b)Eager loading: Əlaqəli entity-lər əsas entity ilə birlikdə dərhal yüklənir.
+
+       EntityGraph bu davranışı dəyişdirmək üçün istifadə edilir. Siz, lazım gəldikdə, əsas entity ilə birlikdə yalnız müəyyən əlaqəli entity-ləri tək sorğu ilə yükləyə bilərsiniz.
+
+       User və role entity-leri uzerinden getsek Əlaqələrin təyin olunması zaman fetchtype bilirikki default olaraq lazy olaraq gəlir.
+       Bu da o deməkdir ki, əlaqəli obyektə sorğu yalnız ehtiyac olduğu halda göndəriləcək. Fərz edək ki, User entity-ne 5 müxtəlif yerdə sorğu göndərilib hansı ki
+       bunlardan 2-də User-lə yanaşı Role-lara da ehtiyac var. Biz entity class-in özündə fetch-type-i dəyişib eager etsək, bu 5 sorğunun hər birində user cədvəli ilə
+       yanaşı role cədvəlinə də sorğu gedəcək, ki, bu da performans problemlərinə (N+1) səbəb olduğu üçün bizə sərf etmir. Ona görə də biz burada entity graph-dan istifadə edərək
+       hansı sorğu da ki User-lə birlikdə də Role-a ehtiyac varsa bu zaman hər iki cədvələ sorğu getməsini təmin edirik.
+
+       Nümunə :
+       EntityGraph<User> entityGraph = entityManager.createEntityGraph(User.class);
+       entityGraph.addAttributeNodes("roles");
+
+       Map<String, Object> properties = new HashMap<>();
+       properties.put("javax.persistence.loadgraph", entityGraph);
+
+       User user = entityManager.find(User.class, userId, properties);
+
+       loadGraph-Lazy
+       fetchgraph-Eager
+
+Question -5.

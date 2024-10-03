@@ -275,15 +275,6 @@ Question -6. @Inheritance annotasiyası:
 
 
 
-
-
-
-
-
-
-
-
-
 Question -7. @Primary annotasiyası:
            @Autowired ilə avtomatik daxil etmə (autowiring) zamanı Spring-in hansı bean-i seçəcəyini müəyyən edir.
            Bu, eyni tipdə birdən çox bean olduğu halda hansı bean-in default olaraq istifadə olunacağını göstərir.
@@ -302,4 +293,104 @@ Question -8. @Qualifier annotasiyası:
              Qeyd: @Qualifier @Primary-dən daha çox üstünlük dərəcəsinə malikdir, yəni, @Qualifer olan yerdə @Primary nəzərə alınmır.
 
 
-Question -. @Transaction nə üçün istifadə olunur?
+Question -9. @Transactional nə üçün istifadə olunur?
+             SQL-dəki tranzaksiya ilə eyni prinsipdə işləyir. Bu annotasiya ilə təyin olunan metodların daxilindəki bütün əməliyyatlar atomik olaraq icra olunur.
+             Yəni fərz edək ki, metod daxilində 3 əməliyyat var. Əgər bu əməliyyatlardan hər hansı birində uğursuzluq baş verərsə digər əməliyyatlar da geri alınacaq (rollback).
+             Real Case Scenario:
+             a) Banking System: Bank əməliyyatları zamanı pul köçürməsi kimi əməliyyatlar həyata keçirilir. Əgər pul göndərmə əməliyyatında səhv olarsa, pul köçürülməsi əməliyyatı tamamilə geri qaytarılmalıdır.
+             b) E-commerce System: Müştəri ödəniş etdikdən sonra sifariş məlumatları bazaya yazılır. Ödəniş prosesi uğursuz olarsa, sifariş məlumatlarının da yazılmaması üçün rollback təmin edilir.
+             Bəzi hallarda metodun @Transactional annotasiyası ilə təyin olunmasına baxmayaraq tranzaksiya məntiqi işləməyə bilər. Bu hansı halda ola bilər?
+
+             1. Metodun eyni sinif içində çağırılması (Self-invocation):
+
+                     Bu problemi başa düşmək üçün ilk öncə @Transactional-ın işləmə məntiqini başa düşək:
+                     @Transactional annotasiyası tranzaksiyanı proxy mexanizmi ilə idarə edir.
+                     Spring Proxy mexanizmi nədir?
+                     Spring @Transactional annotasiyasını əlavə etdiyiniz zaman, bu metod bir proxy obyekt vasitəsilə idarə olunur. Proxy, orijinal metodun ətrafında bir “qat” yaradaraq metodun çağırılmasını idarə edir.
+                     @Transactional annotasiyası ilə proxy mexanizmi, tranzaksiya başlamadan əvvəl və tranzaksiya başa çatdıqdan sonra müəyyən məntiqi işə salmaq üçün istifadə olunur.
+
+                     Proxy mexanizmi Spring-in Aspect-Oriented Programming (AOP) infrastrukturunun bir hissəsidir. @Transactional annotasiyası əlavə etdiyiniz zaman,
+                     Spring həmin sinfi və metodları proxy sinif kimi yaradır. Yəni, real sinif deyil, həmin sinfin bir “surəti” proxy olaraq yaradılır. Bu proxy sinif metodları çağıranda tranzaksiya məntiqini işə salır.
+
+                     Proxy obyektin tranzaksiya idarəetməsi aşağıdakı mərhələlərdə baş verir:
+
+                     -- Metod çağırılır.
+                     -- Proxy obyekt tranzaksiya başlayır.
+                     -- Əsas metod icra edilir.
+                     -- Əgər istisna baş verməzsə, tranzaksiya commit olunur (yəni uğurla başa çatdırılır).
+                     -- Əgər istisna baş verərsə, tranzaksiya rollback olunur (yəni geri qaytarılır).
+
+                     Self-invocation problemi nədir?
+
+                     Self-Invocation Problemi: Eyni class daxilində bir metod digər bir metodu çağırdıqda, bu çağırış birbaşa həmin sinifin instance-ı vasitəsilə edilir.
+                     Nəticədə, tranzaksiya proxy sinifin əvəzinə, orijinal metod çağırılır və tranzaksiya məntiqi işə düşmür.
+                     Proxy obyektinin yarana bilməməsi səbəbi nədir?
+                     Proxy obyektin yaranmaması problemi əslində yarana bilməmək deyil, proxy obyektin daxili çağırışları idarə etməməsidir. Yəni, proxy obyekt sinif xaricindən edilən çağırışları idarə edir,
+                     ancaq sinfin öz daxilindəki çağırışlarda işə düşmür.
+
+                     Bu problemin həlli üçün :
+                     -- Başqa sinifdən çağırış.
+                     -- AspectJ proxy istifadə.
+                     -- Manuel tranzaksiya idarəçiliyi (TransactionTemplate).
+                     -- AopContext.currentProxy() metodu ilə proxy obyektini istifadə.
+                     -- Metodları fərqli siniflərə bölmək.
+
+             2. Metodun private və ya final olması:
+                         Spring AOP (Aspect-Oriented Programming) mexanizmi yalnız public metodlarda işləyir. Əgər metod private və ya final təyin edilibsə,
+                         tranzaksiya məntiqi tətbiq olunmur, çünki Spring bu metodlara proxy tətbiq edə bilmir.
+
+             3.Exception-ların düzgün idarə olunmaması:
+                         Default olaraq, Spring yalnız unchecked exceptions (runtime exceptions) baş verdikdə tranzaksiyanı geri qaytarır (rollback edir). Əgər checked exceptions atılırsa, Spring həmin tranzaksiyanı rollback etmir.
+                         Bu da tranzaksiya məntiqinin düzgün işləməməsinə səbəb ola bilər.
+
+Question -10. Isolation levels :
+              Bir tranzaksiyanın digər tranzaksiyaya təsir səviyyəsini müəyyən edir.
+              Düzgün istifadəsi "dirty reads", "non-repeatable reads" və "phantom reads" kimi problemləri idarə etmək olur.
+              İzolyasiya səviyyələri tranzaksiya ACID prinsiplərinin bir hissəsidir (Atomicity, Consistency, Isolation, Durability).
+
+              Dirty read: Bir tranzaksiya digər tranzaksiyanın hələ təsdiqlənməmiş məlumatlarını oxuya bilər.
+                          Məsələn, əgər həmin tranzaksiya sonradan geri çəkilsə (rollback), artıq yanlış məlumat oxunmuş olur.
+              Non-Repeatable Read : Bir tranzaksiyanın eyni sətri 2-ci dəfə oxuduğu zaman, ilk oxuğuduğu məlumatdan fərqli məlumat alması problemidir.
+                                    Bunun səbəbi o olur ki, bu tranzaksiya ilk dəfə sətri oxuyur, sonra başqa bir tranzaksiya bu sətir üzərində hər hansı
+                                    bir əməliyyat icra etdiyi üçün ilk tranzaksiya bura 2-ci dəfə gəldikdə fərqli məlumatla qarşılaşır.
+              Phantom read: bu problem, bir tranzaksiya daxilində bir SELECT sorğusunun icrası zamanı, eyni tranzaksiyanın daha sonra eyni SELECT sorğusunu
+                            icra etdikdə fərqli nəticələr əldə etməsi ilə yaranır. Bu, verilənlər bazasında başqaları tərəfindən əlavə edilən və ya silinən
+                            məlumatların tranzaksiya icra edildiyi vaxtda vəziyyəti dəyişdirməsi nəticəsində baş verir.
+
+                         --> Non-Repeatable Read  vs  Phantom read
+
+                            Non-Repeatable Read --> eyni sətir üzərindəki dəyişiklikdən gedir söhbət. Məsələn:
+                            Select Name from Person where id=1 --> bu sorgudan Gulshan qayidir
+                            Əgər başqa bir tranzaksiya bu sətir üzərində update əməliyyatı apararsa:
+                            Update Person set Name="Gülşən"
+                            Bu zaman birinci tranzaksiya ikinci dəfə bu sətri oxuduqda:
+                            Select Name from Person where id=1 --> bu sorgudan Gülşən qayidir
+
+                            Phantom read --> Bu problem isə adətən Select sorğuların nəticələrinin fərqli gəlməsi zamanı yaranır. Məsələn:
+                            Select * from Person ---> Tranzaksiya A (ilk cəhd)  --> output : 5 rows
+                            Insert... ---> Tranzaksiya B (Yeni row-lar əlavə olundu)
+                            Select * from Person ---> Tranzaksiya A (ikinci cəhd)  --> output : 8 rows
+
+                            Tranzaksiya A-nın ilk və ikinci cəhdlərində output-lar eyni olmadığı üçün  Phantom read problemi yaranır.
+
+               Hansı isolation level-lər var?
+                a) READ UNCOMMITTED
+                b) READ COMMITTED
+                c) REPEATABLE READ
+                d) SERIALIZABLE
+
+              İzolyasiya Səviyyəsi     | Dirty read  |  Non-Repeatable Read | Phantom read | Məlumatın Təkrarlanması
+            --------------------------------------------------------------------------------------------------------------
+              READ UNCOMMITTED         | true        |  true                | true         | Minimum izolyasiya
+              READ COMMITTED           | false       |  true                | true         | Orta səviyyədə izolyasiya
+              REPEATABLE READ          | true        |  false               | true         | Yüksək izolyasiya
+              SERIALIZABLE             | false       |  false               | false        | Tam izolyasiya
+
+
+              a) READ UNCOMMITTED : Bu ən aşağı izolyasiya səviyyəsidir. Bir tranzaksiya başqalarının təsdiqlənməmiş (uncommitted) məlumatlarını oxuya bilər.
+              b) READ COMMITTED : Bu səviyyədə bir tranzaksiya yalnız digər tranzaksiyalar tərəfindən təsdiqlənmiş (committed) məlumatları oxuya bilər.
+                                  Bu, dirty read problemini həll edir.
+              c) REPEATABLE READ : Bu səviyyə, tranzaksiya daxilində məlumatın sabit qalmasını təmin edir. Bir tranzaksiya eyni məlumatı bir neçə dəfə oxuyarsa,
+                                   o məlumatın digər tranzaksiya tərəfindən dəyişdirilməsinə icazə verilmir.
+              d) SERIALIZABLE  : Bu ən yüksək izolyasiya səviyyəsidir. Tranzaksiyalar bir-birinin tamamilə təcrid olunmuş şəkildə işləməsini təmin edir.
+                                 Eyni vaxtda birdən çox tranzaksiya işlədilə bilməz və hər bir tranzaksiya sıralı şəkildə icra olunur.

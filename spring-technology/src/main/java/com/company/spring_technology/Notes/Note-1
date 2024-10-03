@@ -129,7 +129,7 @@ Question -5. Pessimistic vs Optimistic locking
        Pessimistic lock Stock Management, Bank operations, Rental Services kimi case-lərdə tədbiq oluna bilər.
         I. Online alış-veriş saytında müştərilər eyni zamanda bir məhsulu sifariş edə bilərlər. Əgər bu məhsulun yalnız 1 ədəd qalığı varsa və iki müştəri eyni anda
            bu məhsulu sifariş etməyə çalışarsa, məhsul iki dəfə satıla bilər ki, bu da problemlər yarada bilər.
-       -- Birinci müştəri məhsulu sifariş etmək istədikdə məhsulun stok məlumatı kilidlənir və başqa bir müştəri stok məlumatına müraciət edə bilmir.
+       -- Birinci müştəri məhsulu sifariş etmək istədikdə məhsulun stok məlumatı locklayır və başqa bir müştəri stok məlumatına müraciət edə bilmir.
        -- Əgər birinci müştəri məhsulu uğurla sifariş edərsə, stok yenilənir və kilid açılır.
        -- Sonra ikinci müştəri həmin məhsula müraciət etdikdə, artıq stokda mövcud olmadığını görür.
 
@@ -144,7 +144,7 @@ Question -5. Pessimistic vs Optimistic locking
 
     2) Optimistic locking ---> bir row üzərində eyni anda birdən çox əməliyyatın gedə bildiyini göstərir və prosses zamanı heç bir lock-lama tədbiq olunmur.
                                Optimistic locking versiyalama prinspindən istifadə edir.
-      @Version --> entity class-ında versiyalanma üçün yaradılan field-in üzərinə qoyulur. Adətən tam ədəd tipi və ya Date tipləri ilə istifadə olunur.
+       @Version --> entity class-ında versiyalanma üçün yaradılan field-in üzərinə qoyulur. Adətən tam ədəd tipi və ya Date tipləri ilə istifadə olunur.
                -- Hibernate row-u çəkib oxuyarkən versiyanı da oxuyur və yadında saxlayır.
                -- Row üzərində dəyişiklik baş verən zaman, hibernate row-un versiya nömrəsini yenidən yoxlayır. Əgər bu zaman hibernate-in yaddaşda saxladığı
                   nömrə ilə bu nömrə uyğun gəlməzsə bu zaman conflict yaranır və OptimisticLockExaption atılır. Yox əgər hər iki versiya nömrəsi bir-birinə
@@ -152,6 +152,25 @@ Question -5. Pessimistic vs Optimistic locking
 
 
 
+
+Question -6. @Inheritance
+
+Question -7. @Primary annotasiyası:
+           @Autowired ilə avtomatik daxil etmə (autowiring) zamanı Spring-in hansı bean-i seçəcəyini müəyyən edir.
+           Bu, eyni tipdə birdən çox bean olduğu halda hansı bean-in default olaraq istifadə olunacağını göstərir.
+
+Question -8. @Qualifier annotasiyası:
+             Spring containerdə birdən çox eyni tipdə bean olduqda, hansı bean-in injectə olacağını təyin edən annotasiyadır.
+             Bean-lər təyin olunan zaman (@Component, @Service) onlara id təyin olunur. Məsələn:
+             @Service("test")
+             Inject zamanı hansı bean istifadə olunmalıdırsa qualifier annotasiyasi vasitəsilə həmin bean-in id-i göstərilir. Məsələn:
+             @Autowired
+             public Payment(@Qualifier("test") PaymentService service)
+                 {
+                    this.service=service;
+                 }
+
+             Qeyd: @Qualifier @Primary-dən daha çox üstünlük dərəcəsinə malikdir, yəni, @Qualifer olan yerdə @Primary nəzərə alınmır.
 
 
 Question -. @Transaction nə üçün istifadə olunur?

@@ -111,4 +111,47 @@ Question -4. EntityGraph nədir?
        loadGraph-Lazy
        fetchgraph-Eager
 
-Question -5.
+Question -5. Pessimistic vs Optimistic locking
+            Optimistic və Pessimistic Locking Hibernate və JPA-də concurrency (eyni vaxtda birdən çox istifadəçinin məlumatlarla işləməsi) məsələlərini həll etmək üçün istifadə olunan iki fərqli yanaşmadır.
+    1) Pessimistic locking ---> üzərində əməliyyat gedən entity locklanır ki, başqa bir user onun üzərində əməliyyat apara bilməsin.
+                                BU prosses session səviyyəsində aparılır və transaction başlarkən açılan session sonlanana qədər və ya rolback
+                                edilənə qədər row lock vəziyyətində qalır.(Qeyd: DeadLock-a səbəb ola bilər)
+                                Hibernate-də Pessimistic Locking növlərini LockModeType vasitəsilə təyin edə bilərsiniz.
+                                Hibernate-də əsas 3 növ Pessimistic Locking mövcuddur:
+                                a) PESSIMISTIC_READ : locklanan row üzərində ancaq read əməliyyatı aparmaq mümkündür. Write əməliyyatına icazə verilmir.
+                                b) PESSIMISTIC_WRITE : locklanan  row üzərində nə read, nə də write əməliyyatını aparmağa icazə verilmir.
+                                                        Employee employee = entityManager.find(Employee.class, id, LockModeType.PESSIMISTIC_WRITE);
+                                c) PESSIMISTIC_FORCE_INCREMENT : PESSIMISTIC_WRITE ilə eynidir, ondan fərqi ondadır ki, versiyalama prinsipi ilə işləyir.
+                                                                 Row-a lock tədbiq edildikdə, həmin row üzərində dəyişiklik aparılmasa belə versiya nömrəsi artırılır.
+                                                                 entityManager
+                                                                     .lock(entity, LockModeType.PESSIMISTIC_FORCE_INCREMENT);
+
+       Pessimistic lock Stock Management, Bank operations, Rental Services kimi case-lərdə tədbiq oluna bilər.
+        I. Online alış-veriş saytında müştərilər eyni zamanda bir məhsulu sifariş edə bilərlər. Əgər bu məhsulun yalnız 1 ədəd qalığı varsa və iki müştəri eyni anda
+           bu məhsulu sifariş etməyə çalışarsa, məhsul iki dəfə satıla bilər ki, bu da problemlər yarada bilər.
+       -- Birinci müştəri məhsulu sifariş etmək istədikdə məhsulun stok məlumatı kilidlənir və başqa bir müştəri stok məlumatına müraciət edə bilmir.
+       -- Əgər birinci müştəri məhsulu uğurla sifariş edərsə, stok yenilənir və kilid açılır.
+       -- Sonra ikinci müştəri həmin məhsula müraciət etdikdə, artıq stokda mövcud olmadığını görür.
+
+       II. Avtomobil icarəsi sistemində eyni avtomobili birdən çox istifadəçi eyni vaxtda rezerv etməyə çalışa bilər. Əgər bir avtomobil eyni anda bir neçə şəxsə icarəyə verilərsə,
+           bu konflikt və narazılıq yarada bilər.
+       -- İcarə sistemində, bir avtomobilin icarə üçün mövcudluğunu yoxlayarkən, həmin avtomobil kilidlənir.
+       -- Avtomobilə həmin anda başqa bir şəxs müraciət etdikdə, onun kilidli olduğunu görür və mövcud olmadığını anlayır.
+       -- İlk şəxs icarə prosesini tamamladıqdan sonra kilid açılır və başqa istifadəçilər bu avtomobili icarəyə götürə bilərlər.
+
+
+       QEYD : pessimistic locking performansa mənfi təsir edə bilər, çünki obyektlər kilidləndikdə digər tranzaksiyalar gözləməli olur. Bu səbəbdən, bu metod yalnız ciddi məlumat təhlükəsizliyi və tamlığı tələb edən hallarda tətbiq olunmalıdır.
+
+    2) Optimistic locking ---> bir row üzərində eyni anda birdən çox əməliyyatın gedə bildiyini göstərir və prosses zamanı heç bir lock-lama tədbiq olunmur.
+                               Optimistic locking versiyalama prinspindən istifadə edir.
+      @Version --> entity class-ında versiyalanma üçün yaradılan field-in üzərinə qoyulur. Adətən tam ədəd tipi və ya Date tipləri ilə istifadə olunur.
+               -- Hibernate row-u çəkib oxuyarkən versiyanı da oxuyur və yadında saxlayır.
+               -- Row üzərində dəyişiklik baş verən zaman, hibernate row-un versiya nömrəsini yenidən yoxlayır. Əgər bu zaman hibernate-in yaddaşda saxladığı
+                  nömrə ilə bu nömrə uyğun gəlməzsə bu zaman conflict yaranır və OptimisticLockExaption atılır. Yox əgər hər iki versiya nömrəsi bir-birinə
+                  eyni olarsa bu zaman əməliyyat uğurla aparılır və versiya nömrəsi 1 vahid artırılır.
+
+
+
+
+
+Question -. @Transaction nə üçün istifadə olunur?

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+
+    <changeSet id="1" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.0.1_create_table_category.sql" />
+    </changeSet>
+
+    <changeSet id="2" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.0.2_create_table_task.sql" />
+    </changeSet>
+
+    <changeSet id="3" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.0.3_insert_to_category.sql" />
+    </changeSet>
+
+    <changeSet id="4" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.0.4_insert_to_task.sql" />
+    </changeSet>
+
+    <changeSet id="5" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.0.5_create_table_test.sql" />
+    </changeSet>
+    <changeSet id="6" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.0.6_drop_table_test.sql" />
+    </changeSet>
+    <changeSet id="7" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.0.7_create_table_team.sql" />
+    </changeSet>
+    <changeSet id="8" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.0.8_create_table_project.sql" />
+    </changeSet>
+    <changeSet id="9" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.0.9_create_table_profession.sql" />
+    </changeSet>
+    <changeSet id="10" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.1.1_create_table_employee.sql" />
+    </changeSet>
+    <changeSet id="11" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.1.2_create_table_taskStatus.sql" />
+    </changeSet>
+    <changeSet id="12" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/1.0/1.1.3_alter_table_task_add_columns.sql" />
+    </changeSet>
+    <changeSet id="13" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/2.0/2.0.1_delete_table_task.sql" />
+    </changeSet>
+    <changeSet id="14" author="gulshan_sattarova">
+        <sqlFile path="db/changelog/2.0/2.0.2_insert_to_table.sql" />
+    </changeSet>
+</databaseChangeLog>

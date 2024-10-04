@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: spring-technology
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/java_spring
+    username: postgres
+    password: 2810
+  liquibase:
+    change-log: classpath:/db/changelog/changelog-master.xml

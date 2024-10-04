@@ -394,3 +394,8 @@ Question -10. Isolation levels :
                                    o məlumatın digər tranzaksiya tərəfindən dəyişdirilməsinə icazə verilmir.
               d) SERIALIZABLE  : Bu ən yüksək izolyasiya səviyyəsidir. Tranzaksiyalar bir-birinin tamamilə təcrid olunmuş şəkildə işləməsini təmin edir.
                                  Eyni vaxtda birdən çox tranzaksiya işlədilə bilməz və hər bir tranzaksiya sıralı şəkildə icra olunur.
+
+ Qeydlər :
+     |__ @Transactional annotasiyası class səviyyəsində istifadə olunarsa bu zaman bu class-ın daxilində olan bütün public metodlara tədbiq olunacaq;
+     |__ @Transactional metod səviyyəsinə təyin olunarsa bu metod ancaq public olmalıdır. Çünki proxy obyketi yalnız xaricdə çağrılma zamanı doğru işləyir.
+

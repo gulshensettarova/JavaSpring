@@ -11,6 +11,7 @@ import com.company.spring_technology.model.dto.request.update.TaskUpdateRequest;
 import com.company.spring_technology.TransactionalPractice.service.inter.TaskInterface;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.util.List;
 @Service
@@ -29,7 +30,7 @@ public class TaskService implements TaskInterface {
     @Override
     @Transactional
     public boolean createTask(TaskCreateRequest taskRequest) throws Exception {
-        // Mövcud olan və ya yeni category'yi tapın/yaradın
+        // Mövcud olan və ya yeni category'yi tapır
         Category category = categoryRepository.findByName(taskRequest.getCategoryName());
         if (category == null) {
             category = new Category();

@@ -423,7 +423,142 @@ Question -10. Isolation levels :
                                                           Gözləmə siyahıları, kilidlənmiş məlumatın hazırda hansı transaction tərəfindən istifadə edildiyini və hansı digər transaction-ların növbədə olduğunu saxlayır.
                                                           Bu siyahılar DBMS-in daxili strukturları ilə idarə olunur.
 
+Question-11 : Transaction Propagation
+              Tranzaksiyaların bir-birinə necə təsir edəcəyini müəyyən edir.
+              Əgər tranzaksiyalı bir metod daxilində başqa bir tranzaksiya metodunu çağırırıqsa, Propagation bizə seçim verir ki:
+              -- çağrılan metod mövcud tranzaksiyanı davam etdirsin;
+              -- yeni bir tranzaksiya başlatsın;
+              -- tranzaksiyasız işləsin.
+
+              Propagation səviyyələri :
+              -- REQUIRED (default)
+              -- REQUIRES_NEW
+              -- SUPPORTS
+              -- NOT_SUPPORTED
+              -- MANDATORY
+              -- NEVER
+              -- NESTED
+
+               Hər birinin izahına eyni bir nümunə üzərindən baxaq:
+
+               public void outerMethod() {
+                   innerMethod();
+               }
+
+               public void innerMethod() {
+                 //Some code
+               }
+               outerMethod və innerMethod adlı 2 metodumuz var, hansıki innerMethod birinci metodun içində çağrılır.
+               Əgər metodun özü @Transactional ilə təyin edilibsə deməli onun öz tranzaksiyası var. Amma bu metod başqa @Transactional ilə
+               təyin olunan metodun daxilində çağrılıbsa, bu zaman tranzaksiyanən idarəsini Propagation-a görə təyin edirik.
+
+              1) REQUIRED (default) --Əgər tranzaksiya ilə işarələnmiş bir metod çağırıldığında artıq mövcud bir tranzaksiya varsa (başqa bir tranzaksiya başlandıqdan sonra bu metod icra edilirsə),
+                                      həmin metod mövcud tranzaksiyadan faydalanır və onun içində işləyir.
+                                      Yuxardakı metodların hər ikisində propagation = Propagation.REQUIRED təyin olunubsa,
+                                      bu zaman outerMethod tranzaksiyani başladır və innerMethod üçün ayrıca tranzaksiya açılmır, o da daxilində çağrıldığı metodun
+                                      tranzaksiyasından istifadə edir. Əgər outerMethod-un hər hansı bir sətrində xəta baş verərsə, bu zaman innerMethod-da rollBack olacaq.
+                                      Əgər outerMethod -un öz tranzaksiyası olmasaydı, bu zaman innerMethod çağrıldığı zaman yeni tranzaksiya başladılacaqdı.
+
+                                      Başqa bir nümunəyə baxaq:
+                                      @Transactional(propagation = Propagation.REQUIRED)
+                                      public void saveOrder() {
+                                          updateInventory();  // inventory yenilənir
+                                          chargeCustomer();   // müştəri ödənişi işə salınır
+                                      }
+
+                                      @Transactional(propagation = Propagation.REQUIRED)
+                                      public void updateInventory() {
+                                          // Məhsulların inventar məlumatlarını yenilə
+                                      }
+
+                                      @Transactional(propagation = Propagation.REQUIRED)
+                                      public void chargeCustomer() {
+                                          // Müştərinin kartından ödəniş götür
+                                      }
+
+                                      1) saveOrder() metodu çağırıldıqda bir tranzaksiya başlayacaq.
+                                      2) updateInventory() və chargeCustomer() bu tranzaksiya daxilində icra olunacaq.
+                                      3) Əgər chargeCustomer() metodunda səhv baş versə, updateInventory() metodunun etdiyi bütün dəyişikliklər də geri alınacaq, çünki hamısı eyni tranzaksiyadadır.
+
+              2) REQUIRES_NEW -- Əgər bu metod artıq başqa bir tranzaksiyalı metodun daxilində çağırılırsa (yəni aktiv tranzaksiya varsa), həmin mövcud tranzaksiya müvəqqəti dayandırılır.
+                                 Yeni tranzaksiya yaradılıb icra olunur və sonra bu yeni tranzaksiya bitdikdən sonra dayandırılmış tranzaksiya davam etdirilir.
+                                 Hər iki tranzaksiya bir-birindən tamamilə müstəqildir. Bir tranzaksiya uğursuz olarsa, digərinə təsir etməz.
+                                 Yuxardakı nümunədə outerMethod-un tranzaksiyasının olub-olmamasından aslı olmayaraq, innerMethod üçün yeni tranzaksiya başladılır.
+
+                                 Başqa bir nümunəyə baxaq:
+                                 @Transactional(propagation = Propagation.REQUIRED)
+                                 public void processOrder() {
+                                     updateInventory();    // Mövcud tranzaksiya daxilində işləyir
+                                     logTransaction();     // Yeni tranzaksiya başlayır
+                                 }
+
+                                 @Transactional(propagation = Propagation.REQUIRED)
+                                 public void updateInventory() {
+
+                                 }
+
+                                 @Transactional(propagation = Propagation.REQUIRES_NEW)
+                                 public void logTransaction() {
+
+                                 }
+
+                                 --> logTransaction() metodunda hər hansı bir problem və ya səhv baş versə, bu yalnız həmin tranzaksiyaya təsir edəcək.
+                                    Geri alındığı halda updateInventory() və processOrder() metodlarının etdiyi əməliyyatlar geri alınmayacaq.
+                                 --> Və ya, əgər updateInventory() metodunda səhv baş verərsə, logTransaction() metodunun etdiyi dəyişikliklər geri alınmayacaq,
+                                    çünki hər iki əməliyyat fərqli tranzaksiyalar daxilində icra olunub.
+              3) SUPPORTS --  Çağırılan metodun mövcud bir tranzaksiyanın içində icra olunmasına dəstək verir, amma əgər aktiv bir tranzaksiya yoxdursa, o zaman metodun işini tranzaksiyaya bağlı olmayan şəkildə icra etməyə davam edir.
+
+                              @Transactional(propagation = Propagation.REQUIRED)
+                              public void processOrder() {
+                                  updateInventory();    // Mövcud tranzaksiya daxilində işləyir
+                                  sendEmail();         // Dəstək verir, amma tranzaksiyaya bağlı deyil
+                              }
+
+                              @Transactional(propagation = Propagation.SUPPORTS)
+                              public void updateInventory() {
+
+                              }
+
+                              @Transactional(propagation = Propagation.SUPPORTS)
+                              public void sendEmail() {
+
+                              }
+
+                              processOrder() Metodu: REQUIRED  ilə təyin edilib, yəni bu metod çağırıldığında mütləq bir tranzaksiya olmalıdır.
+                                                     Əgər tranzaksiya yoxdursa, yeni bir tranzaksiya yaradılacaq.
+                              updateInventory() Metodu: SUPPORTS  ilə təyin edilib. Bu metod processOrder() daxilində çağırıldığı üçün, burada aktiv bir tranzaksiya var.
+                                                        Beləliklə, bu metod bu tranzaksiyadan istifadə edəcək.
+                                                        Əgər updateInventory() müstəqil olaraq çağırılsaydı, aktiv bir tranzaksiya olmadan icra olunacaqdı.
+                              sendEmail() Metodu: Eynilə, bu metod da SUPPORTS  ilə təyin edilib. processOrder() daxilində çağırıldığında, aktiv tranzaksiyadan istifadə edir.
+                                                  Adi metodun daxilində çağrıldığı zaman heç bir halda rollBack prossesi getməyəcək.
+
+             4) NOT_SUPPORTED -- çağırılan metodun bir tranzaksiyanın içində icra olunmasına icazə vermir. Əgər metod aktiv bir tranzaksiya daxilində çağırılırsa, o zaman aktiv tranzaksiya dayandırılır (suspends) və metod tranzaksiyaya bağlı olmadan icra olunur.
+                                 @Transactional(propagation = Propagation.REQUIRED)
+                                 public void processOrder() {
+                                     // Bu metodda tranzaksiya var
+                                     updateInventory();
+                                 }
+
+                                 @Transactional(propagation = Propagation.NOT_SUPPORTED)
+                                 public void updateInventory() {
+
+                                 }
+
+                               -- updateInventory() Metodu:  NOT_SUPPORTED  ilə təyin edilib. Bu metod processOrder() daxilində çağırıldığında, aktiv tranzaksiya (yəni processOrder()-un tranzaksiyası) dayandırılacaq.
+                                  Bu halda, updateInventory() metodu tranzaksiyaya bağlı olmadan icra olunacaq.
+             5) MANDATORY -- MANDATORY  ilə təyin edilmiş metodlar yalnız aktiv bir tranzaksiya daxilində çağırılmalıdır. Əgər aktiv bir tranzaksiya yoxdursa, metod exception (IllegalTransactionStateException) atacaq.
+             6) NEVER -- NEVER ilə təyin edilmiş metodlar yalnız tranzaksiyaya bağlı olmadan işləyə bilər. Əgər metod aktiv bir tranzaksiya daxilində çağırılarsa, o zaman IllegalTransactionStateException exceptionu atacaq.
+             7) NESTED -- çağırıldığı metodda aktiv bir tranzaksiyanın içində "nested" bir tranzaksiya yaradır.
+                          Əgər daxili tranzaksiyada rollBack olarsa bu əsas metoda təsir etməyəcək, ama əsas metodda
+                          rollBack olduğu halda bu daxili metodun da əməliyyatlarının geri alınmağına səbəb olacaq.
+
+
+
+
+
+
  Qeydlər :
+
      |__ @Transactional annotasiyası class səviyyəsində istifadə olunarsa bu zaman bu class-ın daxilində olan bütün public metodlara tədbiq olunacaq;
      |__ @Transactional metod səviyyəsinə təyin olunarsa bu metod ancaq public olmalıdır. Çünki proxy obyketi yalnız xaricdə çağrılma zamanı doğru işləyir.
 

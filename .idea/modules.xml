@@ -3,6 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/spring-technology.iml" filepath="$PROJECT_DIR$/.idea/spring-technology.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/spring-technology.spring-technology.main.iml" filepath="$PROJECT_DIR$/.idea/modules/spring-technology.spring-technology.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/spring-technology.spring-technology.main~1.iml" filepath="$PROJECT_DIR$/.idea/modules/spring-technology.spring-technology.main~1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/spring-technology.spring-technology.test.iml" filepath="$PROJECT_DIR$/.idea/modules/spring-technology.spring-technology.test.iml" />
     </modules>
   </component>
 </project>

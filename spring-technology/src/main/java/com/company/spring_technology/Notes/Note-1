@@ -344,34 +344,44 @@ Question -9. @Transactional nə üçün istifadə olunur?
                          Bu da tranzaksiya məntiqinin düzgün işləməməsinə səbəb ola bilər.
 
 Question -10. Isolation levels :
-              Bir tranzaksiyanın digər tranzaksiyaya təsir səviyyəsini müəyyən edir.
+              Bir tranzaksiyanın başqa tranzaksiyalardan təcrid olunma səviyyəsini müəyyən edir.
               Düzgün istifadəsi "dirty reads", "non-repeatable reads" və "phantom reads" kimi problemləri idarə etmək olur.
               İzolyasiya səviyyələri tranzaksiya ACID prinsiplərinin bir hissəsidir (Atomicity, Consistency, Isolation, Durability).
 
               Dirty read: Bir tranzaksiya digər tranzaksiyanın hələ təsdiqlənməmiş məlumatlarını oxuya bilər.
                           Məsələn, əgər həmin tranzaksiya sonradan geri çəkilsə (rollback), artıq yanlış məlumat oxunmuş olur.
+                          Tutaqki :
+                          Transaction A ---> Update set password="2810"  User where id=1701 (Commit olunanmamış kod)
+                          Transaction B ---> Select * from User where id=1701 (Bu zaman Transaction A commit olmur deyə yalnış data gələcək)
+
               Non-Repeatable Read : Bir tranzaksiyanın eyni sətri 2-ci dəfə oxuduğu zaman, ilk oxuğuduğu məlumatdan fərqli məlumat alması problemidir.
                                     Bunun səbəbi o olur ki, bu tranzaksiya ilk dəfə sətri oxuyur, sonra başqa bir tranzaksiya bu sətir üzərində hər hansı
                                     bir əməliyyat icra etdiyi üçün ilk tranzaksiya bura 2-ci dəfə gəldikdə fərqli məlumatla qarşılaşır.
+
+                                    Transaction A ---> Select * from User where id=1701 (1)
+                                    Transaction B ---> Update set password="2810"  User where id=1701 (2)
+                                    Transaction A ---> Select * from User where id=1701 (3)
+                                   Burada 1 və 3 eyni biznes məntiq olsa da fəqli nəticələr qaytarır.
               Phantom read: bu problem, bir tranzaksiya daxilində bir SELECT sorğusunun icrası zamanı, eyni tranzaksiyanın daha sonra eyni SELECT sorğusunu
                             icra etdikdə fərqli nəticələr əldə etməsi ilə yaranır. Bu, verilənlər bazasında başqaları tərəfindən əlavə edilən və ya silinən
                             məlumatların tranzaksiya icra edildiyi vaxtda vəziyyəti dəyişdirməsi nəticəsində baş verir.
 
                          --> Non-Repeatable Read  vs  Phantom read
 
-                            Non-Repeatable Read --> eyni sətir üzərindəki dəyişiklikdən gedir söhbət. Məsələn:
+                            Non-Repeatable Read --> 1 sətir üzərindəki dəyişiklikdən gedir söhbət. Məsələn:
                             Select Name from Person where id=1 --> bu sorgudan Gulshan qayidir
                             Əgər başqa bir tranzaksiya bu sətir üzərində update əməliyyatı apararsa:
                             Update Person set Name="Gülşən"
                             Bu zaman birinci tranzaksiya ikinci dəfə bu sətri oxuduqda:
                             Select Name from Person where id=1 --> bu sorgudan Gülşən qayidir
 
-                            Phantom read --> Bu problem isə adətən Select sorğuların nəticələrinin fərqli gəlməsi zamanı yaranır. Məsələn:
-                            Select * from Person ---> Tranzaksiya A (ilk cəhd)  --> output : 5 rows
-                            Insert... ---> Tranzaksiya B (Yeni row-lar əlavə olundu)
-                            Select * from Person ---> Tranzaksiya A (ikinci cəhd)  --> output : 8 rows
+                            Phantom read --> Bu problem Non-repeatable read ilə eynidir, fərq ondadır ki, burda 1 sətir yox bir neçə sətirdən gedir söhbət:
+                            Transaction A -- >Select * from User where UserStatus="Admin"; (1)
+                            Transaction B -- >Update set Username="gulshen" where Id=2810; (2) (burda insert və ya delete sorgusu da ola bilərdi)
+                            Transaction A -- >Select * from User where UserStatus="Admin"; (3)
 
-                            Tranzaksiya A-nın ilk və ikinci cəhdlərində output-lar eyni olmadığı üçün  Phantom read problemi yaranır.
+                            1-və 3-dən eyni nəticə qayitmir
+
 
                Hansı isolation level-lər var?
                 a) READ UNCOMMITTED
@@ -390,10 +400,28 @@ Question -10. Isolation levels :
               a) READ UNCOMMITTED : Bu ən aşağı izolyasiya səviyyəsidir. Bir tranzaksiya başqalarının təsdiqlənməmiş (uncommitted) məlumatlarını oxuya bilər.
               b) READ COMMITTED : Bu səviyyədə bir tranzaksiya yalnız digər tranzaksiyalar tərəfindən təsdiqlənmiş (committed) məlumatları oxuya bilər.
                                   Bu, dirty read problemini həll edir.
-              c) REPEATABLE READ : Bu səviyyə, tranzaksiya daxilində məlumatın sabit qalmasını təmin edir. Bir tranzaksiya eyni məlumatı bir neçə dəfə oxuyarsa,
-                                   o məlumatın digər tranzaksiya tərəfindən dəyişdirilməsinə icazə verilmir.
+              c) REPEATABLE READ : REPEATABLE_READ səviyyəsi bir transaction ərzində məlumatın dəyişməz qalmasına zəmanət verir, amma bu yalnız həmin transaction üçün keçərlidir.
+                                   Başqa transaction-lar həmin məlumatı dəyişə bilər. Lakin, bu dəyişikliklər oxuyan transaction üçün görünməz olacaq. Yəni:
+                                   -- Transaction A məlumatı bir dəfə oxuyur və eyni transaction daxilində həmin məlumatı yenidən oxuduqda eyni (köhnə) məlumatı görəcək, hətta Transaction B həmin məlumatı dəyişsə belə.
+                                   -- Transaction B məlumatı dəyişib commit edə bilər, amma Transaction A üçün həmin dəyişiklik görünməz olacaq. Yəni Transaction A həmin məlumatı köhnə vəziyyətində görəcək.
               d) SERIALIZABLE  : Bu ən yüksək izolyasiya səviyyəsidir. Tranzaksiyalar bir-birinin tamamilə təcrid olunmuş şəkildə işləməsini təmin edir.
                                  Eyni vaxtda birdən çox tranzaksiya işlədilə bilməz və hər bir tranzaksiya sıralı şəkildə icra olunur.
+                                 Bu vəziyyətdə hər transaction bir-birinin ardınca işləyəcək və bir transaction bitmədən digəri başlamayacaq, beləliklə "phantom read"lərin qarşısı alınacaq
+
+                                   ---> SERIALIZABLE səviyyəsi transaction-ların icrası zamanı şəxsi kilidlər (exclusive locks) tətbiq edir.Bu kilidlər verilənlər bazasındakı oxumaq və yazmaq əməliyyatlarına nəzarət edir.
+                                        Hər bir transaction oxumaq və ya yazmaq istədiyi verilənlər bazası sətirləri və ya aralıqları (ranges) üzərində kilid qoyur. Bu kilidlər transaction başa çatana qədər digər transaction-lara
+                                        həmin məlumatı oxumağa və ya dəyişdirməyə icazə vermir.
+                                         --> Kilidləmə Protokolları:
+                                             Verilənlər bazasında kilidləmə əməliyyatları müəyyən protokollar əsasında həyata keçirilir. Bu protokollar transaction-ların necə icra olunacağını və bir-birinə necə təsir etməyəcəyini müəyyən edir:
+
+                                             Two-phase locking (2PL): Bu kilidləmə protokolu ən çox istifadə edilən metodlardan biridir. İki mərhələdən ibarətdir:
+                                                                      Growing phase (artım mərhələsi): Transaction ilk dəfə sətir üzərində əməliyyat etmək istədikdə exclusive lock qoyur və transaction boyunca bu kilidləri artırır (oxumaq və yazmaq üçün).
+                                                                      Shrinking phase (azalma mərhələsi): Transaction bitdikdən sonra kilidlər sərbəst buraxılır və digər transaction-lar həmin sətirlərə və ya aralığa daxil ola bilər.
+
+                                        --> Lock manager : DBMS, transaction-lar arasında kilidləri idarə edən bir lock manager (kilidləmə idarəedicisi) adlı daxili bir komponentə malikdir.
+                                        --> Wait queues : Bir transaction kilidlənmiş bir sətir və ya səhifəyə daxil olmağa çalışdıqda, həmin transaction gözləmə siyahısına əlavə olunur.
+                                                          Gözləmə siyahıları, kilidlənmiş məlumatın hazırda hansı transaction tərəfindən istifadə edildiyini və hansı digər transaction-ların növbədə olduğunu saxlayır.
+                                                          Bu siyahılar DBMS-in daxili strukturları ilə idarə olunur.
 
  Qeydlər :
      |__ @Transactional annotasiyası class səviyyəsində istifadə olunarsa bu zaman bu class-ın daxilində olan bütün public metodlara tədbiq olunacaq;

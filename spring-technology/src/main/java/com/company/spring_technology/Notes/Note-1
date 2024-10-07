@@ -329,9 +329,13 @@ Question -9. @Transactional nə üçün istifadə olunur?
                      ancaq sinfin öz daxilindəki çağırışlarda işə düşmür.
 
                      Bu problemin həlli üçün :
-                     -- Başqa sinifdən çağırış.
-                     -- AspectJ proxy istifadə.
-                     -- Manuel tranzaksiya idarəçiliyi (TransactionTemplate).
+                     -- Başqa sinifdən çağırış --> Bu zaman metodlar ayrı servislərə ayrılmalıdırlar.
+                     -- AspectJ proxy istifadə --> Spring konfiqurasiyasında AspectJ rejimi aktivləşdirmək lazımdır:
+                                                   <tx:annotation-driven mode="aspectj"/>
+                                                   AspectJ daha güclü bir AOP mexanizmidir və self-invocation problemlərini həll edir.
+
+                     -- Manuel tranzaksiya idarəçiliyi (TransactionTemplate).--> Nümunə ManualTransaction
+
                      -- AopContext.currentProxy() metodu ilə proxy obyektini istifadə.
                      -- Metodları fərqli siniflərə bölmək.
 
@@ -440,6 +444,8 @@ Question-11 : Transaction Propagation
               -- NESTED
 
                Hər birinin izahına eyni bir nümunə üzərindən baxaq:
+               (Qeyd: nümunədə olan metodlar eyni class daxilində deyil, çünki eyni class daxilində elan olunan transactional metodu digər
+               metodda çağırdıqda   Self-invocation problemi baş verir).
 
                public void outerMethod() {
                    innerMethod();

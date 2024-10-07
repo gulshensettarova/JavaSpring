@@ -1,0 +1,47 @@
+Question -1 : Hibernate cache levels
+
+  Hibernate performansı artırmaq və veriləmlər bazasına olan təkrar sorğuların qarşısını
+  almaq üçün cache level-lərdən istifadə edir. Cache-level-lərə baxmadan öncə Session və Session Factory anlayışlarına baxaq:
+
+  --> Session Factory -- DB ilə confiqurasiya işlərini həyata keçirən bir factory-dir.
+  --> Session -- DB səviyyəsində CRUD əməliyyatları session səviyyəsində həyata keçirili.
+     Session Factory Sessionlardan ibarət olur.
+     DB -ilə hər əməliiay üçün Session Factory-də 1 Session açırıq və əməliyyat bitdikdə bu Session bağlanır.
+     Session Factory isə hər zaman açıq qalır.
+
+     Cache Levels :
+     Hibernate-də 2 cahce level var :
+     --> First level cache
+     --> Second level cache
+
+     First level cache Session səviyyəsində olur. Tutaqdı bir session daxilində User cədvəlinə 1 dəfə select sorğusu gedib.
+     İlk dəfə sorğu bazaya göndərilir, məlumatlar ordan götürülür, amma bu session daxilində növbəti dəfə
+     User cədvəlinə select sorğusu göndərmək lazım gələrsə, bu zaman bu sorğu DB-ə deyil,
+     first level cache-ə göndərilir. İlk sorğudan qayıdan nəticə orda saxlanlılır. (Qeyd: ilk sorğuda da ilk öncə cache yoxlanılır,
+     data orda olmadığı üçün DB-ə sorğu göndərilir). Session bağlandıqda cache təmizlənir.
+
+     Second level cache Session Factory səviyyəsində olur. Xüsusi konfiqurasiya tələb edir.
+     Cache-də saxlanılan dataları Session Factory daxilində olan bütün sessionlara ötürülə bilir.
+     First-level cache-dən fərqi odur ki, session-lar arası data ötürmək mümkündür.
+
+
+Question 2: Second level cache in implementasiyalarına nümunə göstərə bilərsən?
+            -- EHCache
+            -- Infinispan
+            -- Hazelcast
+            -- Caffeine
+
+            Bu terminlər ikinci səviyyəli keşi idarə etmək üçün geniş istifadə olunan müxtəlif keş sistemləri və kitabxanalarıdır.
+            Bu sistemlər Hibernate və digər texnologiyalarla inteqrasiya edilərək verilənlər bazası sorğularının performansını artırır, sistemin yüklənmə vaxtını azaldır və məlumatlara daha tez çıxışı təmin edir.
+
+       -->  EHCache-in Keş Strategiyaları:
+            Read-Write: Eyni vaxtda oxuma və yazma əməliyyatları edilə bilər.
+            Non-strict Read-Write: Daha az yazma əməliyyatı olan sistemlər üçün optimallaşdırılmışdır.
+       -->  İstifadə Sahələri:
+            EHCache çox vaxt Spring Boot tətbiqlərində ikinci səviyyəli keşi tətbiq etmək üçün istifadə olunur. Yüksək performans tələb edən, lakin kompleks olmayan layihələr üçün uyğundur.
+
+       -->  Xüsusiyyətlər:
+          - Əlavə Fayl Yaddaşı (Disk Cache): EHCache obyektləri yalnız RAM-da deyil, həm də fayl sistemində saxlayır. Bu, yaddaş limitinə çatdıqda məlumatların itirilməsinin qarşısını alır.
+          - Klaster dəstəyi: EHCache obyektləri bir neçə server arasında paylaşa bilir.
+          - TTL (Time-to-live) və TTR (Time-to-refresh) kimi parametrik konfiqurasiya: Obyektlərin nə qədər müddət yaddaşda saxlanacağını idarə etməyə imkan verir.
+          - Əsasən sadə tətbiqlər üçün uyğundur: Kiçik və orta səviyyəli tətbiqlərdə geniş istifadə olunur.

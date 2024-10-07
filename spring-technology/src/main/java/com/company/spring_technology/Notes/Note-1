@@ -336,8 +336,30 @@ Question -9. @Transactional nə üçün istifadə olunur?
 
                      -- Manuel tranzaksiya idarəçiliyi (TransactionTemplate).--> Nümunə ManualTransaction
 
-                     -- AopContext.currentProxy() metodu ilə proxy obyektini istifadə.
-                     -- Metodları fərqli siniflərə bölmək.
+                     -- AopContext.currentProxy() metodu ilə proxy obyektini istifadə:
+                     import org.springframework.aop.framework.AopContext;
+                     import org.springframework.stereotype.Service;
+                     import org.springframework.transaction.annotation.Transactional;
+
+                     @Service
+                     public class OrderService {
+
+                         @Transactional
+                         public void placeOrder() {
+                             // Self-invocation problemi yaranacaq, çünki aşağıdakı metod birbaşa çağırılır
+                             saveOrder();
+
+                             // Bunun əvəzinə AopContext.currentProxy() ilə proxy obyektini əldə etmək lazımdır
+                             ((OrderService) AopContext.currentProxy()).saveOrder();
+                         }
+
+                         @Transactional
+                         public void saveOrder() {
+                             // Sifarişin saxlanılması əməliyyatı
+                             System.out.println("Order saved");
+                         }
+                     }
+
 
              2. Metodun private və ya final olması:
                          Spring AOP (Aspect-Oriented Programming) mexanizmi yalnız public metodlarda işləyir. Əgər metod private və ya final təyin edilibsə,
